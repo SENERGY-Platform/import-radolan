@@ -69,7 +69,6 @@ class FtpLoader:
     def __init__(self, datadir: str = os.sep + 'tmp' + os.sep + 'radolan-sf'):
         if not os.path.exists(datadir):
             os.mkdir(datadir)
-        self.__client = FTP(DWD_HOST)
         self.__datadir = datadir
 
     def download_latest(self) -> typing.Union[str, None]:
@@ -118,17 +117,19 @@ class FtpLoader:
         return self.__get_file_of_dir(DWD_RECENT_PATH, "bin.gz")
 
     def __get_file_of_dir(self, dir: str, suffix: str = None) -> List[str]:
-        self.__client.login()
-        self.__client.cwd(dir)
-        files = self.__client.nlst()
-        self.__client.close()
+        client = FTP(DWD_HOST)
+        client.login()
+        client.cwd(dir)
+        files = client.nlst()
+        client.close()
         if suffix is None:
             return files
         filteredFiles = []
         for f in files:
             if f.endswith(suffix):
                 filteredFiles.append(f)
-        return filteredFiles
+        client.close()
+        return filteredFiles    
 
 
 if __name__ == "__main__":
