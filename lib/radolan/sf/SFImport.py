@@ -13,11 +13,13 @@
 #  limitations under the License.
 
 import logging
+import time
 from typing import List
 
 import numpy as np
 import wradlib
 from confluent_kafka import Producer
+from confluent_kafka.cimpl import KafkaException
 from osgeo import osr
 
 from lib.radolan.sf import SFPoint
@@ -114,13 +116,19 @@ class SFImport:
                                                 datetime=datetime,
                                                 val_tenth_mm_d=data[it.multi_index[0]][it.multi_index[1]],
                                                 precision=precision, import_id=self.__import_id)
-                    self.__producer.produce(self.__topic, key=self.__import_id, value=point)
+                    queued = False
+                    while not queued:
+                        try:
+                            self.__producer.produce(self.__topic, key=self.__import_id, value=point)
+                            queued = True
+                        except KafkaException as e:
+                            logger.warning("Could not queue kafka message, will retry in 1s. Error: " + str(e))
+                            time.sleep(1)
                     logger.debug(point)
                     points += 1
 
         if delete_file:
             os.remove(file)
-        self.__producer.flush()
         return points
 
     def importFiles(self, files: List[str], delete_files: bool = True) -> int:
