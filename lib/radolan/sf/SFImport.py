@@ -88,7 +88,7 @@ class SFImport:
     def import_from_year(self, year: int):
         if year < 2006:
             raise ValueError("Year may not be smaller than 2006")
-        files = self.__ftp_loader.download_from_year(year, 2)  # TODO remove max
+        files = self.__ftp_loader.download_from_year(year)
         counter = 0
         for file in files:
             try:
