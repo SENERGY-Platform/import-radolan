@@ -7,5 +7,5 @@ COPY requirements.txt .
 RUN conda install -y --file requirements.txt
 
 COPY . .
-
+ENTRYPOINT ["./entrypoint.sh"]
 CMD [ "python", "-u", "./main.py"]
