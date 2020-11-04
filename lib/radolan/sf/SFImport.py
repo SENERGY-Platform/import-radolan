@@ -42,7 +42,7 @@ def point_in_bbox(lat: float, long: float, bbox: List[float]) -> bool:
 
 def point_in_bboxes(lat: float, long: float, bboxes: List[List[float]]) -> bool:
     '''
-    Checks if the point is in at lerast one bbox
+    Checks if the point is in at least one bbox
     :param lat: Point lat
     :param long: Point long
     :param bboxes: List of bboxes
@@ -88,14 +88,7 @@ class SFImport:
     def import_from_year(self, year: int):
         if year < 2006:
             raise ValueError("Year may not be smaller than 2006")
-        files = self.__ftp_loader.download_from_year(year)
-        counter = 0
-        for file in files:
-            try:
-                counter += self.importFile(file)
-            except OSError as e:
-                logger.error("Could not import file " + file + "due to: " + str(e))
-        logger.info("Imported " + str(counter) + " points from year " + str(year))
+        self.__ftp_loader.download_from_year(year, callback=self.importFiles)
 
     def importFile(self, file: str, delete_file: bool = True) -> int:
         data, metadata = wradlib.io.read_radolan_composite(file)
@@ -129,3 +122,9 @@ class SFImport:
             os.remove(file)
         self.__producer.flush()
         return points
+
+    def importFiles(self, files: List[str], delete_files: bool = True) -> int:
+        counter = 0
+        for file in files:
+            counter += self.importFile(file, delete_files)
+        return counter
