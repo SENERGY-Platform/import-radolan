@@ -13,10 +13,10 @@
 #  limitations under the License.
 
 import logging
+import os
 import time
-from typing import List
+from typing import List, Tuple, Union
 
-import numpy as np
 import wradlib
 from confluent_kafka import Producer
 from confluent_kafka.cimpl import KafkaException
@@ -24,8 +24,6 @@ from osgeo import osr
 
 from lib.radolan.sf import SFPoint
 from lib.radolan.sf.ftploader import FtpLoader
-
-import os
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -56,6 +54,27 @@ def point_in_bboxes(lat: float, long: float, bboxes: List[List[float]]) -> bool:
     return False
 
 
+def create_mask(grid: List[List[List[float]]], bboxes: Union[List[List[float]], None]) -> List[Tuple[int, int]]:
+    '''
+    Creates a list of tuples of grid indices, which fit in the bboxes. If bboxes are none, a list of all tuple indices
+    will be returned.
+    :param grid: A 3D List of floats representing a indexed coordinate grid. Expected to be rectangular!
+    :param bboxes: A list of bounding boxes
+    :return: A list of index tuples that represent grid indexes of points that fit into the bounding boxes
+    '''
+    mask = []
+    if bboxes is None:
+        for i in range(0, len(grid)):
+            for j in range(0, len(grid[0])):
+                mask.append((i, j))
+        return mask
+    for i, val in enumerate(grid):
+        for j, xy in enumerate(val):
+            if point_in_bboxes(lat=xy[1], long=xy[0], bboxes=bboxes):
+                mask.append((i, j))
+    return mask
+
+
 class SFImport:
 
     def __init__(self, producer: Producer, topic: str, epsg: int, import_id: str, bboxes: List[List[float]] = None):
@@ -76,6 +95,11 @@ class SFImport:
         self.__topic = topic
         self.__bboxes = bboxes
         self.__ftp_loader = FtpLoader()
+        radolan_grid_xy = wradlib.georef.get_radolan_grid(900, 900)
+        self.__radolan_grid_ll = wradlib.georef.reproject(radolan_grid_xy, projection_source=self.__proj_radolan,
+                                                          projection_target=self.__proj_ll)
+        logger.debug("Preparing mask...")
+        self.__mask = create_mask(self.__radolan_grid_ll, self.__bboxes)
 
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
@@ -95,37 +119,31 @@ class SFImport:
     def importFile(self, file: str, delete_file: bool = True) -> int:
         data, metadata = wradlib.io.read_radolan_composite(file)
 
-        radolan_grid_xy = wradlib.georef.get_radolan_grid(data.shape[0], data.shape[1])
-        radolan_grid_ll = wradlib.georef.reproject(radolan_grid_xy, projection_source=self.__proj_radolan,
-                                                   projection_target=self.__proj_ll)
-
-
         nodataflag = metadata['nodataflag']
         datetime = metadata['datetime']
         precision = metadata['precision']
         points = 0
 
-        it = np.nditer(data, flags=['multi_index'])
-        for val in it:
+        for ij in self.__mask:
+            val = data[ij[0]][ij[1]]
             if val != nodataflag:
-                position_projected = radolan_grid_ll[it.multi_index[0]][it.multi_index[1]]
-                if self.__bboxes is None or point_in_bboxes(position_projected[1], position_projected[0],
-                                                            self.__bboxes):
-                    point = SFPoint.get_message(pos_long=position_projected[0], pos_lat=position_projected[1],
-                                                epsg=self.__epsg,
-                                                datetime=datetime,
-                                                val_tenth_mm_d=data[it.multi_index[0]][it.multi_index[1]],
-                                                precision=precision, import_id=self.__import_id)
-                    queued = False
-                    while not queued:
-                        try:
-                            self.__producer.produce(self.__topic, key=self.__import_id, value=point)
-                            queued = True
-                        except KafkaException as e:
-                            logger.warning("Could not queue kafka message, will retry in 1s. Error: " + str(e))
-                            time.sleep(1)
-                    logger.debug(point)
-                    points += 1
+                position_projected = self.__radolan_grid_ll[ij[0]][ij[1]]
+
+                point = SFPoint.get_message(pos_long=position_projected[0], pos_lat=position_projected[1],
+                                            epsg=self.__epsg,
+                                            datetime=datetime,
+                                            val_tenth_mm_d=val,
+                                            precision=precision, import_id=self.__import_id)
+                queued = False
+                while not queued:
+                    try:
+                        self.__producer.produce(self.__topic, key=self.__import_id, value=point)
+                        queued = True
+                    except KafkaException as e:
+                        logger.warning("Could not queue kafka message, will retry in 1s. Error: " + str(e))
+                        time.sleep(1)
+                logger.debug(point)
+                points += 1
 
         if delete_file:
             os.remove(file)
