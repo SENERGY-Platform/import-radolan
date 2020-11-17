@@ -12,18 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
-import datetime
-from rfc3339 import rfc3339
+from typing import Dict
 
 factor = 0.1
 
 
-def get_message(pos_long: float, pos_lat: float, epsg: int, datetime: datetime, val_tenth_mm_d: float,
-                precision: float, import_id: str) -> str:
-    return json.dumps({
-        "import_id": import_id,
-        "time": rfc3339(datetime, utc=True, use_system_timezone=False),
+def get_message(pos_long: float, pos_lat: float, epsg: int, val_tenth_mm_d: float,
+                precision: float) -> Dict:
+    return {
         "value": round(val_tenth_mm_d * factor, 2),
         "meta": {
             "projection": "EPSG:" + str(epsg),
@@ -32,4 +28,4 @@ def get_message(pos_long: float, pos_lat: float, epsg: int, datetime: datetime, 
             "lat": pos_lat,
             "long": pos_long,
         }
-    })
+    }

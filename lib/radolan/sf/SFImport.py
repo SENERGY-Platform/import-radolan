@@ -11,22 +11,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-import logging
 import os
-import time
 from typing import List, Tuple, Union
 
 import wradlib
-from confluent_kafka import Producer
-from confluent_kafka.cimpl import KafkaException
+from import_lib.import_lib import ImportLib
 from osgeo import osr
 
 from lib.radolan.sf import SFPoint
 from lib.radolan.sf.ftploader import FtpLoader
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def point_in_bbox(lat: float, long: float, bbox: List[float]) -> bool:
@@ -77,39 +70,39 @@ def create_mask(grid: List[List[List[float]]], bboxes: Union[List[List[float]], 
 
 class SFImport:
 
-    def __init__(self, producer: Producer, topic: str, epsg: int, import_id: str, bboxes: List[List[float]] = None):
+    def __init__(self, lib: ImportLib):
         '''
+        :param lib: Instance of the import-lib
+        '''
+        self.__lib = lib
+        self.__logger = self.__lib.get_logger(__name__)
 
-        :param producer: Kafka Producer
-        :param topic: Output Topic
-        :param epsg: ESPG Code to use for projection
-        :param import_id: ID annotation for kafka exports. Used as key for messages as well
-        :param bboxes: List of bboxes to select specific areas for import. If not set, all areas will be imported
-        '''
         self.__proj_radolan = wradlib.georef.create_osr("dwd-radolan")
         self.__proj_ll = osr.SpatialReference()
+        epsg = self.__lib.get_config("EPSG", 4326)
         self.__proj_ll.ImportFromEPSG(epsg)
         self.__epsg = epsg
-        self.__import_id = import_id
-        self.__producer = producer
-        self.__topic = topic
-        self.__bboxes = bboxes
+
+        self.__bboxes = self.__lib.get_config("BBOXES", None)
+        if not isinstance(self.__bboxes, List):
+            self.__logger.error("Invalid config for BBOXES will not be used")
+            self.__bboxes = None
         self.__ftp_loader = FtpLoader()
         radolan_grid_xy = wradlib.georef.get_radolan_grid(900, 900)
         self.__radolan_grid_ll = wradlib.georef.reproject(radolan_grid_xy, projection_source=self.__proj_radolan,
                                                           projection_target=self.__proj_ll)
-        logger.debug("Preparing mask...")
+        self.__logger.debug("Preparing mask...")
         self.__mask = create_mask(self.__radolan_grid_ll, self.__bboxes)
 
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
         if file is None:
-            logger.warning("Not importing most recent file: Already exists")
+            self.__logger.warning("Not importing most recent file: Already exists")
         else:
             try:
-                logger.info('Imported ' + str(self.importFile(file)) + ' points from most recent data')
+                self.__logger.info('Imported ' + str(self.importFile(file)) + ' points from most recent data')
             except OSError as e:
-                logger.error("Could not import file " + file + "due to: " + str(e))
+                self.__logger.error("Could not import file " + file + "due to: " + str(e))
 
     def import_from_year(self, year: int):
         if year < 2006:
@@ -131,18 +124,10 @@ class SFImport:
 
                 point = SFPoint.get_message(pos_long=position_projected[0], pos_lat=position_projected[1],
                                             epsg=self.__epsg,
-                                            datetime=datetime,
                                             val_tenth_mm_d=val,
-                                            precision=precision, import_id=self.__import_id)
-                queued = False
-                while not queued:
-                    try:
-                        self.__producer.produce(self.__topic, key=self.__import_id, value=point)
-                        queued = True
-                    except KafkaException as e:
-                        logger.warning("Could not queue kafka message, will retry in 1s. Error: " + str(e))
-                        time.sleep(1)
-                logger.debug(point)
+                                            precision=precision)
+                self.__lib.put(datetime, point)
+                self.__logger.debug(point)
                 points += 1
 
         if delete_file:

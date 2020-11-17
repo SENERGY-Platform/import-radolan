@@ -1,0 +1,5 @@
+wradlib
+requests==2.24.0
+schedule
+pip
+git

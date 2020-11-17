@@ -12,40 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
-import logging
-import os
 import time
 
 import schedule
-from confluent_kafka import Producer
+from import_lib.import_lib import ImportLib
 
 from lib.radolan.sf.SFImport import SFImport
 
-logging.basicConfig()
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost")
-KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "import-radolan-sf")
-CONFIG = json.loads(
-    os.getenv("CONFIG",
-              '{"EPSG": 4326, "BBOXES": [[12.35, 51.3, 12.4, 51.35],[9.88, 51.5, 10, 51.56]], "IMPORT_YEARS": []}'))
-IMPORT_ID = os.getenv("IMPORT_ID", "unknown")
-
 if __name__ == '__main__':
-    producer = Producer({'bootstrap.servers': KAFKA_BOOTSTRAP})
-    bboxes = None
-    if "BBOXES" in CONFIG:
-        bboxes = CONFIG["BBOXES"]
 
-    sf_import = SFImport(producer=producer, topic=KAFKA_TOPIC, epsg=CONFIG["EPSG"], import_id=IMPORT_ID,
-                         bboxes=bboxes)
+    lib = ImportLib()
+    sf_import = SFImport(lib)
 
-    if "IMPORT_YEARS" in CONFIG and len(CONFIG["IMPORT_YEARS"]) > 0:
-        for year in CONFIG["IMPORT_YEARS"]:
-            sf_import.import_from_year(year)
+    import_years = lib.get_config("IMPORT_YEARS", [])
+    for year in import_years:
+        sf_import.import_from_year(year)
 
     sf_import.import_most_recent()
 
