@@ -1,6 +1,6 @@
 FROM continuumio/miniconda3:4.8.2-alpine
 
-WORKDIR /home/wradlib
+WORKDIR /home/anaconda
 
 ENV PATH /opt/conda/bin:$PATH
 RUN conda create -n env python=3.7
@@ -13,4 +13,7 @@ COPY pip-requirements.txt .
 RUN pip install -r pip-requirements.txt
 
 COPY . .
+USER 0
+RUN chown -R anaconda:anaconda *
+USER anaconda
 CMD [ "python", "-u", "./main.py"]
