@@ -15,18 +15,33 @@
 import time
 
 import schedule
-from import_lib.import_lib import ImportLib
+from import_lib.import_lib import ImportLib, get_logger
 
 from lib.radolan.sf.SFImport import SFImport
 
 if __name__ == '__main__':
 
     lib = ImportLib()
+    logger = get_logger(__name__)
     sf_import = SFImport(lib)
+
+    state, _ = lib.get_last_published_datetime()
+    if state is None:
+        logger.info("Import is starting fresh")
+    else:
+        logger.info("Import is continuing previous import")
 
     import_years = lib.get_config("IMPORT_YEARS", [])
     for year in import_years:
-        sf_import.import_from_year(year)
+        if state is not None and state.year > year:
+            logger.info("Not reimporting data from " + str(year))
+            continue
+        elif state is not None and state.year == year:
+            logger.info("Partially importing data from " + str(year))
+            sf_import.import_from_year(year, state)
+        else:
+            logger.info("Importing full data from " + str(year))
+            sf_import.import_from_year(year)
 
     sf_import.import_most_recent()
 

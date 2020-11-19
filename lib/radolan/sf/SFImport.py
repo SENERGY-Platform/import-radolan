@@ -12,60 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
-from typing import List, Tuple, Union
+from datetime import datetime
+from typing import List
 
 import wradlib
-from import_lib.import_lib import ImportLib
+from import_lib.import_lib import ImportLib, get_logger
 from osgeo import osr
 
+from lib.bbox import create_mask
 from lib.radolan.sf import SFPoint
 from lib.radolan.sf.ftploader import FtpLoader
-
-
-def point_in_bbox(lat: float, long: float, bbox: List[float]) -> bool:
-    '''
-    Checks if the point is in the bbox
-    :param lat: Point lat
-    :param long: Point long
-    :param bbox: The bounding box as [min Longitude, min Latitude, max Longitude, max Latitude]
-    :return: True, if point is the bbox, False otherwise
-    '''
-    return bbox[0] <= long <= bbox[2] and bbox[1] <= lat <= bbox[3]
-
-
-def point_in_bboxes(lat: float, long: float, bboxes: List[List[float]]) -> bool:
-    '''
-    Checks if the point is in at least one bbox
-    :param lat: Point lat
-    :param long: Point long
-    :param bboxes: List of bboxes
-    :return: True, if point is in at least one bbox, False otherwise
-    '''
-    for bbox in bboxes:
-        if point_in_bbox(lat, long, bbox):
-            return True
-    return False
-
-
-def create_mask(grid: List[List[List[float]]], bboxes: Union[List[List[float]], None]) -> List[Tuple[int, int]]:
-    '''
-    Creates a list of tuples of grid indices, which fit in the bboxes. If bboxes are none, a list of all tuple indices
-    will be returned.
-    :param grid: A 3D List of floats representing a indexed coordinate grid. Expected to be rectangular!
-    :param bboxes: A list of bounding boxes
-    :return: A list of index tuples that represent grid indexes of points that fit into the bounding boxes
-    '''
-    mask = []
-    if bboxes is None:
-        for i in range(0, len(grid)):
-            for j in range(0, len(grid[0])):
-                mask.append((i, j))
-        return mask
-    for i, val in enumerate(grid):
-        for j, xy in enumerate(val):
-            if point_in_bboxes(lat=xy[1], long=xy[0], bboxes=bboxes):
-                mask.append((i, j))
-    return mask
 
 
 class SFImport:
@@ -75,7 +31,7 @@ class SFImport:
         :param lib: Instance of the import-lib
         '''
         self.__lib = lib
-        self.__logger = self.__lib.get_logger(__name__)
+        self.__logger = get_logger(__name__)
 
         self.__proj_radolan = wradlib.georef.create_osr("dwd-radolan")
         self.__proj_ll = osr.SpatialReference()
@@ -104,10 +60,10 @@ class SFImport:
             except OSError as e:
                 self.__logger.error("Could not import file " + file + "due to: " + str(e))
 
-    def import_from_year(self, year: int):
+    def import_from_year(self, year: int, start: datetime = None):
         if year < 2006:
             raise ValueError("Year may not be smaller than 2006")
-        self.__ftp_loader.download_from_year(year, callback=self.importFiles)
+        self.__ftp_loader.download_from_year(year, callback=self.importFiles, start=start)
 
     def importFile(self, file: str, delete_file: bool = True) -> int:
         data, metadata = wradlib.io.read_radolan_composite(file)
@@ -127,7 +83,7 @@ class SFImport:
                                             val_tenth_mm_d=val,
                                             precision=precision)
                 self.__lib.put(datetime, point)
-                self.__logger.debug(point)
+                self.__logger.debug(str(datetime) + ":" + str(point))
                 points += 1
 
         if delete_file:
