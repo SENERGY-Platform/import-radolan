@@ -19,8 +19,35 @@ factor = 0.1
 
 def get_message(pos_long: float, pos_lat: float, epsg: int, val_tenth_mm_d: float,
                 precision: float) -> Dict:
+    '''
+    Uses a single  DWD Radolan SF point to create a message for import by ensuring the correct format and adding annotations
+    Warning levels are annotated according to https://www.dwd.de/DE/wetter/warnungen_aktuell/kriterien/warnkriterien.html
+
+    :param pos_long: longitude position
+    :param pos_lat:  latitude position
+    :param epsg: EPSG projection code
+    :param val_tenth_mm_d: precipitation in 1/10 mm/d
+    :param precision: precision of the measurement
+    :return: An annotated message ready to be imported
+    '''
+
+    value = round(val_tenth_mm_d * factor, 2)
+    warn_level = 0
+    warn_event = ""
+    if 30 <= value <= 50:
+        warn_level = 2
+        warn_event = "Dauerregen"
+    elif 50 < value <= 80:
+        warn_level = 3
+        warn_event = "Ergiebiger Dauerregen"
+    elif value > 80:
+        warn_level = 4
+        warn_event = "Extrem ergiebiger Dauerregen"
+
     return {
-        "value": round(val_tenth_mm_d * factor, 2),
+        "value": value,
+        "warn_level": warn_level,
+        "warn_event": warn_event,
         "meta": {
             "projection": "EPSG:" + str(epsg),
             "unit": "mm/d",
