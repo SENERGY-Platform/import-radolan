@@ -23,6 +23,7 @@ from lib.radolan.sf.SFPoint import extract_message
 logger = get_logger(__name__)
 
 dauerregen = {
+    -1: "Keine Aussage möglich",
     0: "",
     2: "Dauerregen",
     3: "Ergiebiger Dauerregen",
@@ -71,13 +72,17 @@ class Annotator:
             if value_72 is not None:
                 level_72 = self.__classify_warning(value + value_48 + value_72, 72)
             else:
-                logger.warning("Can't ensure correct warn_level, missing historic data")
+                logger.debug("Can't ensure correct warn_level, missing historic data")
+                level_72 = -1
         else:
-            logger.warning("Can't ensure correct warn_level, missing historic data")
+            logger.debug("Can't ensure correct warn_level, missing historic data")
+            level_48 = -1
 
         self.__history.remove_older_than(date_time - timedelta(days=2), lat, long)
 
-        level = max(level_24, level_48, level_72)
+        level = -1
+        if level_48 != -1 and level_72 != -1:
+            level = max(level_24, level_48, level_72)
         return level, dauerregen[level]
 
     @staticmethod
