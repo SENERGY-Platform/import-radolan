@@ -117,7 +117,7 @@ class FtpLoader:
             tarnames = tarnames[0:max_files]
         tarnames_filtered = []
         for tarname in tarnames:
-            month = int(remove_prefix(remove_suffix(tarname, ".tar.gz"), "SF" + str(year)))
+            month = int(remove_prefix(remove_prefix(remove_prefix(remove_suffix(tarname, ".tar.gz"), "SF"), "-"), str(year)))
             if start is not None and month < start.month:
                 logger.debug("Skipping download for month " + str(month) + " (already imported)")
                 continue
