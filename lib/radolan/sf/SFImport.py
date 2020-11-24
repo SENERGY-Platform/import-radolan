@@ -70,7 +70,11 @@ class SFImport:
         self.__ftp_loader.download_from_year(year, callback=self.importFiles, start=start)
 
     def importFile(self, file: str, delete_file: bool = True) -> int:
-        data, metadata = wradlib.io.read_radolan_composite(file)
+        try:
+            data, metadata = wradlib.io.read_radolan_composite(file)
+        except OSError as e:
+            self.__logger.error(str(e) + " Skipping file!")
+            return 0
 
         nodataflag = metadata['nodataflag']
         datetime = metadata['datetime']
