@@ -75,10 +75,8 @@ class HistoryManager:
         :return:
         '''
         key = self.__get_key(lat, long)
-        for saved_date_time, value in self.__history[key]:
-            if saved_date_time > date_time:
-                return  # Entries are ordered
-            self.__history[key].remove((saved_date_time, value))
+        while self.__history[key][0][0] < date_time:
+            del self.__history[key][0]
 
     def get_value(self, date_time: datetime, lat: float, long: float) -> Optional[float]:
         '''

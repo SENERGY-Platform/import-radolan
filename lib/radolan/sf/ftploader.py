@@ -144,11 +144,13 @@ class FtpLoader:
                 files.append(self.__datadir + os.sep + name)
             os.remove(targz)
             if callback is not None:
+                files.sort()
                 callback(files)
                 files = []
 
         if callback is not None:
             return None
+        files.sort()
         return files
 
     def __download_recents(self, callback: Callable[[List[str]], any] = None, start: datetime = None) -> Union[
@@ -185,6 +187,7 @@ class FtpLoader:
             if f.endswith(suffix):
                 filteredFiles.append(f)
         client.close()
+        filteredFiles.sort()
         return filteredFiles
 
 
