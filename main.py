@@ -17,13 +17,13 @@ import time
 import schedule
 from import_lib.import_lib import ImportLib, get_logger
 
-from lib.radolan.sf.SFImport import SFImport
+from radolan_lib.radolan.RadolanImport import RadolanImport
 
 if __name__ == '__main__':
 
     lib = ImportLib()
     logger = get_logger(__name__)
-    sf_import = SFImport(lib)
+    sf_import = RadolanImport(lib, product='SF')
 
     state, _ = lib.get_last_published_datetime()
     if state is None:
