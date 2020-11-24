@@ -78,8 +78,7 @@ class SFImport:
         points = 0
 
         for i, j in self.__mask:
-            val = round(data[i][j] * 0.1, 2)  # val in 1/10 mm/d needs to be converted in 1 mm7d
-            precision = round(precision * 0.1 , 2)  # precision in 1/10 mm/d needs to be converted in 1 mm7d
+            val = round(data[i][j], 2)
             if val != nodataflag:
                 position_projected = self.__radolan_grid_ll[i][j]
                 lat = position_projected[1]
