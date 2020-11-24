@@ -21,6 +21,7 @@ from osgeo import osr
 
 from lib.bbox import create_mask
 from lib.radolan.sf import SFPoint
+from lib.radolan.sf.Annotator import Annotator
 from lib.radolan.sf.ftploader import FtpLoader
 
 
@@ -50,6 +51,9 @@ class SFImport:
         self.__logger.debug("Preparing mask...")
         self.__mask = create_mask(self.__radolan_grid_ll, self.__bboxes)
 
+        history = self.__lib.get_last_n_messages(72 * len(self.__mask))  # Last 72 messages for each location
+        self.__annotator = Annotator(history)
+
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
         if file is None:
@@ -73,15 +77,22 @@ class SFImport:
         precision = metadata['precision']
         points = 0
 
-        for ij in self.__mask:
-            val = data[ij[0]][ij[1]]
+        for i, j in self.__mask:
+            val = round(data[i][j] * 0.1, 2)  # val in 1/10 mm/d needs to be converted in 1 mm7d
+            precision = round(precision * 0.1 , 2)  # precision in 1/10 mm/d needs to be converted in 1 mm7d
             if val != nodataflag:
-                position_projected = self.__radolan_grid_ll[ij[0]][ij[1]]
+                position_projected = self.__radolan_grid_ll[i][j]
+                lat = position_projected[1]
+                long = position_projected[0]
 
-                point = SFPoint.get_message(pos_long=position_projected[0], pos_lat=position_projected[1],
+                warn_level, warn_event = self.__annotator.get_warn_event_level(datetime, lat, long, val)
+
+                point = SFPoint.get_message(pos_long=long, pos_lat=lat,
                                             epsg=self.__epsg,
-                                            val_tenth_mm_d=val,
-                                            precision=precision)
+                                            value=val,
+                                            precision=precision,
+                                            warn_level=warn_level,
+                                            warn_event=warn_event)
                 self.__lib.put(datetime, point)
                 self.__logger.debug(str(datetime) + ":" + str(point))
                 points += 1
