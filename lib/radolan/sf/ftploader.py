@@ -86,10 +86,10 @@ class FtpLoader:
             os.mkdir(datadir)
         self.__datadir = datadir
 
-    def download_latest(self) -> Union[str, None]:
+    def download_latest(self) -> str:
         '''
         Downloads the latest radolan sf file
-        :return: Name of the file or None, if the file already exists
+        :return: Name of the file
         '''
         files = self.__get_recent_list()
         file = files[len(files) - 1]

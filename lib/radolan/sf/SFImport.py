@@ -56,13 +56,10 @@ class SFImport:
 
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
-        if file is None:
-            self.__logger.warning("Not importing most recent file: Already exists")
-        else:
-            try:
-                self.__logger.info('Imported ' + str(self.importFile(file)) + ' points from most recent data')
-            except OSError as e:
-                self.__logger.error("Could not import file " + file + "due to: " + str(e))
+        try:
+            self.__logger.info('Imported ' + str(self.importFile(file)) + ' points from most recent data')
+        except OSError as e:
+            self.__logger.error("Could not import file " + file + "due to: " + str(e))
 
     def import_from_year(self, year: int, start: datetime = None):
         if year < 2006:
@@ -73,7 +70,7 @@ class SFImport:
         try:
             data, metadata = wradlib.io.read_radolan_composite(file)
         except OSError as e:
-            self.__logger.error(str(e) + " Skipping file!")
+            self.__logger.warning(str(e) + " Skipping file! This is most likely caused by invalid DWD data")
             return 0
 
         nodataflag = metadata['nodataflag']
