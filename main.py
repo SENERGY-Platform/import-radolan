@@ -17,14 +17,22 @@ import time
 import schedule
 from import_lib.import_lib import ImportLib, get_logger
 
-from radolan_lib.radolan.Products import SF
+from radolan_lib.radolan.Products import str_to_product
 from radolan_lib.radolan.RadolanImport import RadolanImport
 
 if __name__ == '__main__':
 
     lib = ImportLib()
     logger = get_logger(__name__)
-    sf_import = RadolanImport(lib, product=SF)
+    product = lib.get_config("PRODUCT", "SF")
+    try:
+        product = str_to_product(product)
+    except ValueError as e:
+        logger.error(e)
+        logger.error("Can't run with this product name. Exiting!")
+        quit(1)
+
+    radolan_import = RadolanImport(lib, product=product)
 
     state, _ = lib.get_last_published_datetime()
     if state is None:
@@ -39,14 +47,14 @@ if __name__ == '__main__':
             continue
         elif state is not None and state.year == year:
             logger.info("Partially importing data from " + str(year))
-            sf_import.import_from_year(year, state)
+            radolan_import.import_from_year(year, state)
         else:
             logger.info("Importing full data from " + str(year))
-            sf_import.import_from_year(year)
+            radolan_import.import_from_year(year)
 
-    sf_import.import_most_recent()
+    radolan_import.import_most_recent()
 
-    schedule.every().hour.at(":45").do(sf_import.import_most_recent)
+    schedule.every().hour.at(":45").do(radolan_import.import_most_recent)
 
     while True:
         schedule.run_pending()
