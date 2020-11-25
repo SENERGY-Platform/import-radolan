@@ -86,7 +86,7 @@ class RadolanImport:
     def import_file(self, file: str, delete_file: bool = True) -> int:
         try:
             data, metadata = wradlib.io.read_radolan_composite(file)
-        except OSError as e:
+        except (OSError, ValueError) as e:
             self.__logger.warning(str(e) + " Skipping file! This is most likely caused by invalid DWD data")
             return 0
 
