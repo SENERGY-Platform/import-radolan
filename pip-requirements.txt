@@ -1,1 +1,1 @@
-git+https://github.com/SENERGY-Platform/import-radolan-lib.git@d918a54a4cc2749f88479c1adbbeb7ef350b020c
+git+https://github.com/SENERGY-Platform/import-lib.git@e92c4736ebe9f7aadcdfb9921d08f23309d27e16
