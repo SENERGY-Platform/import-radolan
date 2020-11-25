@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import time
+from datetime import datetime
 
 import schedule
 from import_lib.import_lib import ImportLib, get_logger
@@ -54,7 +55,11 @@ if __name__ == '__main__':
 
     radolan_import.import_most_recent()
 
-    schedule.every().hour.at(":45").do(radolan_import.import_most_recent)
+    minute = str(datetime.now().minute)
+    if len(minute) == 1:
+        minute = "0" + minute
+    logger.info("Setting schedule to run each hour at minute " + minute)
+    schedule.every().hour.at(":" + minute).do(radolan_import.import_most_recent)
 
     while True:
         schedule.run_pending()
