@@ -16,4 +16,5 @@ RUN pip install -r pip-requirements.txt
 COPY . .
 RUN chown -R anaconda:anaconda *
 USER anaconda
+LABEL org.opencontainers.image.source https://github.com/SENERGY-Platform/import-radolan
 CMD [ "python", "-u", "./main.py"]
