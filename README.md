@@ -5,9 +5,6 @@ Afterwards, the latest data will be imported every hour.
 
 ## Outputs
 * value (float): precipitation
-* warn_level (int): estimated warn level according to [these](https://www.dwd.de/DE/wetter/warnungen_aktuell/kriterien/warnkriterien.html) criteria.
-May contain the value -1 to indicate uncertainty. 
-* warn_event (string): description of warn_level
 * meta (Object): 
   + projection (string): EPSG projection information
   + unit (string): unit of precipitation
@@ -27,7 +24,3 @@ May contain the value -1 to indicate uncertainty.
 ---
 
 This tool uses publicly available data provided by Deutscher Wetterdienst.
-
-The supplied information about warn levels and events are estimates and do not reflect the official warnings by DWD.
-Therefore, this tool may only be used for weather analysis and not to warn user about current weather events.
-Please use the official warnings available [here](https://www.dwd.de/DE/wetter/warnungen_gemeinden/warnWetter_node.html).

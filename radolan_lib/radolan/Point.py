@@ -16,7 +16,7 @@ from typing import Dict, Tuple
 
 
 def get_message(pos_long: float, pos_lat: float, epsg: int, value: float,
-                precision: float, warn_level: int, warn_event: str, unit: str) -> Dict:
+                precision: float, unit: str) -> Dict:
     '''
     Uses a single  DWD Radolan SF point to create a message for import by ensuring the correct format
     :param pos_long: longitude position
@@ -30,8 +30,6 @@ def get_message(pos_long: float, pos_lat: float, epsg: int, value: float,
 
     return {
         "value": value,
-        "warn_level": warn_level,
-        "warn_event": warn_event,
         "meta": {
             "projection": "EPSG:" + str(epsg),
             "unit": unit,
@@ -42,7 +40,7 @@ def get_message(pos_long: float, pos_lat: float, epsg: int, value: float,
     }
 
 
-def extract_message(msg: Dict) -> Tuple[float, float, float, int, str, str, float, str]:
+def extract_message(msg: Dict) -> Tuple[float, float, float, str, float, str]:
     '''
     Extracts a message
 
@@ -51,11 +49,11 @@ def extract_message(msg: Dict) -> Tuple[float, float, float, int, str, str, floa
     :except ValueError: If the message is not in correct format
     '''
 
-    if "value" not in msg or "warn_level" not in msg or "warn_event" not in msg or "meta" not in msg or "projection" not in \
+    if "value" not in msg or "meta" not in msg or "projection" not in \
             msg["meta"] or "unit" not in msg["meta"] or "precision" not in msg["meta"] or "lat" not in \
             msg["meta"] or "long" not in msg["meta"]:
         raise ValueError
 
     meta = msg["meta"]
-    return meta["lat"], meta["long"], msg["value"], msg["warn_level"], msg["warn_event"], meta["unit"], meta[
+    return meta["lat"], meta["long"], msg["value"],  meta["unit"], meta[
         "precision"], meta["projection"]

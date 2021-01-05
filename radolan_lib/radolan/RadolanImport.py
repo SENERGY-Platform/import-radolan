@@ -22,7 +22,6 @@ from osgeo import osr
 from radolan_lib.radolan.Products import Product, RW, SF, is_known_product
 from radolan_lib.util.bbox import create_mask
 from radolan_lib.radolan import Point
-from radolan_lib.radolan.Annotator import Annotator
 from radolan_lib.radolan.Ftploader import FtpLoader
 
 
@@ -67,7 +66,6 @@ class RadolanImport:
         self.__mask = create_mask(self.__radolan_grid_ll, self.__bboxes)
 
         history = self.__lib.get_last_n_messages(history_length * len(self.__mask))  # Last messages for each location
-        self.__annotator = Annotator(history)
 
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
@@ -107,18 +105,14 @@ class RadolanImport:
                 unit = ""
 
                 if self.__product == SF:
-                    warn_level, warn_event = self.__annotator.get_dauerregen(datetime, lat, long, val)
                     unit = "mm/d"
                 if self.__product == RW:
-                    warn_level, warn_event = self.__annotator.get_starkregen(datetime, lat, long, val)
                     unit = "mm/h"
 
                 point = Point.get_message(pos_long=long, pos_lat=lat,
                                           epsg=self.__epsg,
                                           value=val,
                                           precision=precision,
-                                          warn_level=warn_level,
-                                          warn_event=warn_event,
                                           unit=unit)
                 self.__lib.put(datetime, point)
                 self.__logger.debug(str(datetime) + ":" + str(point))
