@@ -15,12 +15,14 @@
 from typing import Dict, Tuple
 
 
-def get_message(pos_long: float, pos_lat: float, epsg: int, value: float,
+def get_message(pos_long: float, pos_lat: float, pos_long_top_right: float, pos_lat_top_right: float, epsg: int, value: float,
                 precision: float, unit: str) -> Dict:
     '''
     Uses a single  DWD Radolan SF point to create a message for import by ensuring the correct format
     :param pos_long: longitude position
     :param pos_lat:  latitude position
+    :param pos_long_top_right: longitude position of top right corner
+    :param pos_lat_top_right:  latitude position of top right corner
     :param epsg: EPSG projection code
     :param value: precipitation in mm/d
     :param precision: precision of the measurement
@@ -36,6 +38,8 @@ def get_message(pos_long: float, pos_lat: float, epsg: int, value: float,
             "precision": precision,
             "lat": pos_lat,
             "long": pos_long,
+            "lat_top_right": pos_lat_top_right,
+            "long_top_right": pos_long_top_right,
         }
     }
 

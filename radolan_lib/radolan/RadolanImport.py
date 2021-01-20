@@ -36,14 +36,11 @@ class RadolanImport:
         if not is_known_product(product):
             raise ValueError("Unknown product")
         self.__product = product
-        history_length = 0
-        dim_x, dim_y = 900, 900
+        self.__dim_x, self.__dim_y = 900, 900
         if self.__product == SF:
-            history_length = 72
-            dim_x, dim_y = 900, 900
+            self.__dim_x, self.__dim_y = 900, 900
         if self.__product == RW:
-            history_length = 12
-            dim_x, dim_y = 900, 900
+            self.__dim_x, self.__dim_y = 900, 900
 
         self.__lib = lib
         self.__logger = get_logger(__name__)
@@ -59,13 +56,11 @@ class RadolanImport:
             self.__logger.error("Invalid config for BBOXES will not be used")
             self.__bboxes = None
         self.__ftp_loader = FtpLoader(product=self.__product)
-        radolan_grid_xy = wradlib.georef.get_radolan_grid(dim_x, dim_y)
+        radolan_grid_xy = wradlib.georef.get_radolan_grid(self.__dim_x, self.__dim_y)
         self.__radolan_grid_ll = wradlib.georef.reproject(radolan_grid_xy, projection_source=self.__proj_radolan,
                                                           projection_target=self.__proj_ll)
         self.__logger.debug("Preparing mask...")
         self.__mask = create_mask(self.__radolan_grid_ll, self.__bboxes)
-
-        history = self.__lib.get_last_n_messages(history_length * len(self.__mask))  # Last messages for each location
 
     def import_most_recent(self):
         file = self.__ftp_loader.download_latest()
@@ -99,9 +94,13 @@ class RadolanImport:
                 position_projected = self.__radolan_grid_ll[i][j]
                 lat = position_projected[1]
                 long = position_projected[0]
+                lat_top_right = None
+                long_top_right = None
+                if i+1 < self.__dim_x and j+1 < self.__dim_y:
+                    position_projected_top_right = self.__radolan_grid_ll[i+1][j+1]
+                    lat_top_right = position_projected_top_right[1]
+                    long_top_right = position_projected_top_right[0]
 
-                warn_event = -1
-                warn_level = ""
                 unit = ""
 
                 if self.__product == SF:
@@ -110,6 +109,8 @@ class RadolanImport:
                     unit = "mm/h"
 
                 point = Point.get_message(pos_long=long, pos_lat=lat,
+                                          pos_long_top_right=long_top_right,
+                                          pos_lat_top_right=lat_top_right,
                                           epsg=self.__epsg,
                                           value=val,
                                           precision=precision,
