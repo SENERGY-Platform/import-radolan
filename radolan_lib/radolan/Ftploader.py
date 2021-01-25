@@ -143,9 +143,14 @@ class FtpLoader:
     def __get_files_of_dir(self, dir: str, suffix: str = None) -> List[str]:
         client = FTP(DWD_HOST)
         client.login()
-        client.cwd(dir)
-        files = client.nlst()
-        client.close()
+        try:
+            client.cwd(dir)
+            files = client.nlst()
+        except Exception:
+            logger.warning("Cloud not fetch files from dir "  + dir)
+            return []
+        finally:
+            client.close()
         if suffix is None:
             return files
         filteredFiles = []
