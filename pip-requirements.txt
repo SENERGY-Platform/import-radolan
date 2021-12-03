@@ -1,1 +1,1 @@
-git+https://github.com/SENERGY-Platform/import-lib.git@d3e20f2d6e4fd94c4372ff9f51c4ce0e3b5a856f
+git+https://github.com/SENERGY-Platform/import-lib.git@df85857d5f4bf0abdabfd93d003350b20cb013bc
