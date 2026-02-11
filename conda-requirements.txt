@@ -1,6 +1,0 @@
-poppler=21.09
-wradlib
-requests==2.24.0
-schedule
-pip
-git

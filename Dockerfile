@@ -1,17 +1,11 @@
-FROM continuumio/miniconda3:4.9.2-alpine
+FROM mambaorg/micromamba:2
 
-WORKDIR /home/anaconda
+WORKDIR /app
 
-ENV PATH /opt/conda/bin:$PATH
-RUN conda create -n env python=3.9
-RUN echo "source activate env" > ~/.bashrc
-
-COPY conda-requirements.txt .
-RUN conda install -c conda-forge -y --file conda-requirements.txt
-
-COPY pip-requirements.txt .
-RUN pip install -r pip-requirements.txt
+COPY conda-lock.yml .
+RUN micromamba create -y -n app -f conda-lock.yml && \
+    micromamba clean --all --yes
 
 COPY . .
-LABEL org.opencontainers.image.source https://github.com/SENERGY-Platform/import-radolan
-CMD [ "python", "-u", "./main.py"]
+LABEL org.opencontainers.image.source=https://github.com/SENERGY-Platform/import-radolan
+CMD [ "micromamba", "run", "-n", "app", "python", "-u", "./main.py"]
