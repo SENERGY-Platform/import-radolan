@@ -23,7 +23,7 @@ from radolan_lib.radolan.RadolanImport import RadolanImport
 
 if __name__ == '__main__':
 
-    lib = ImportLib()
+    lib = ImportLib("github.com/SENERGY-Platform/import-radolan")
     logger = get_logger(__name__)
     product = lib.get_config("PRODUCT", "SF")
     try:
