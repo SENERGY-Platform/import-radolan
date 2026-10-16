@@ -3714,19 +3714,19 @@ package:
   category: main
   optional: false
 - name: import-lib
-  version: 0.3.0
+  version: 0.3.1
   manager: pip
   platform: linux-64
   dependencies:
     confluent-kafka: '*'
     rfc3339: '*'
     structlog: 0.3.0
-  url: git+https://github.com/SENERGY-Platform/import-lib.git@5b1c5f9bbc2bfff23abfba5bc33867c5d35e5808
+  url: git+https://github.com/SENERGY-Platform/import-lib.git@95b306f59373be2a465cf3f361b93b57de835b39
   hash:
-    sha256: 5b1c5f9bbc2bfff23abfba5bc33867c5d35e5808
+    sha256: 95b306f59373be2a465cf3f361b93b57de835b39
   source:
     type: url
-    url: git+https://github.com/SENERGY-Platform/import-lib.git@5b1c5f9bbc2bfff23abfba5bc33867c5d35e5808
+    url: git+https://github.com/SENERGY-Platform/import-lib.git@95b306f59373be2a465cf3f361b93b57de835b39
   category: main
   optional: false
 - name: rfc3339
